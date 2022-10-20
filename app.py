@@ -96,7 +96,7 @@ def user_input_features() -> pd.DataFrame:
 
 
 def get_result(input_df):
-    model = joblib.load('Preprocessing/XGB.pkl')
+    model = joblib.load('Preprocessing & Modelling/XGB.pkl')
     df = load_dataset()
     df = pd.concat([df, input_df], axis=0)
     # encoding
