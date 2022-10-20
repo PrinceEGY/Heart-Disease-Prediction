@@ -15,33 +15,34 @@ st.set_page_config(
 
 @st.cache(persist=True)
 def load_dataset() -> pd.DataFrame:
-    heart_df = pd.read_csv(DATASET_PATH)
-    heart_df = pd.DataFrame(np.sort(heart_df.values, axis=0),
-                            index=heart_df.index,
-                            columns=heart_df.columns)
+    heart_df = pd.read_csv(DATASET_PATH, index_col=0)
     return heart_df
 
 
-df = load_dataset()
-
-
 def user_input_features() -> pd.DataFrame:
+    df = load_dataset()
     st.markdown("""
                 <style>
                 div {
                     font-size:1.01em !important;
                 }
-                label, input, textarea,button {
+                label, input, textarea {
                     font-size:1.2em !important;
-                },
+                }
+                button{
+                    font-size:1.8em !important;
+                    font-weight: bold !important;
+                }
                 </style>
         """, unsafe_allow_html=True)
     race = st.sidebar.selectbox("Race", options=(
         race for race in df.Race.unique()))
     sex = st.sidebar.selectbox("Gender", options=(
         sex for sex in df.Sex.unique()))
+    ages = [age_cat for age_cat in df.AgeCategory.unique()]
+    ages.sort()
     age_cat = st.sidebar.selectbox("Age category",
-                                   options=(age_cat for age_cat in df.AgeCategory.unique()))
+                                   options=(ages))
     bmi_cat = st.sidebar.selectbox("BMI category",
                                    options=(bmi_cat for bmi_cat in df.BMICategory.unique()))
     sleep_time = st.sidebar.number_input(
@@ -96,16 +97,13 @@ def user_input_features() -> pd.DataFrame:
 
 def get_result(input_df):
     model = joblib.load('Preprocessing/XGB.pkl')
+    df = load_dataset()
     df = pd.concat([df, input_df], axis=0)
-    df = df.iloc[:, 2:]
-    input_df
     # encoding
     order_cols = ["BMICategory", "AgeCategory"]
     no_order_cols = ["Smoking", "AlcoholDrinking", "Stroke", "DiffWalking",
                      "Sex", "Race", "Diabetic", "PhysicalActivity",
-                     "GenHealth", "Asthma", "SkinCancer"]
-    df = df.iloc[-1:, :]
-    df
+                     "GenHealth", "Asthma", "KidneyDisease", "SkinCancer"]
     # Label encoding
     for col in order_cols:
         df[col] = preprocessing.LabelEncoder().fit_transform(df[col])
@@ -115,15 +113,16 @@ def get_result(input_df):
         dummy_col = pd.get_dummies(df[col], prefix=col)
         df = pd.concat([df, dummy_col], axis=1)
         del df[col]
-    return model.predict_proba(df)
+    df.drop('HeartDisease', axis=1, inplace=True)
+    return model.predict_proba(df[-1:])
 
 
 with st.sidebar:
     with st.expander('Tool authors'):
         st.markdown("""
         **Authors: [Ahmed Mohsen](https://www.linkedin.com/in/AhmedMohsen-), [Hossam Galal](https://www.linkedin.com/in/hossam-galal-b817bb197/), [Yomna Ramdan]()**
-        
-        You can see the steps of building the model, evaluating it, and cleaning the data itself on GitHub repo [here](https://github.com/PrinceEGY/LinkedIn-Job-Scraper). 
+
+        You can see the steps of building the model, evaluating it, and cleaning the data itself on GitHub repo [here](https://github.com/PrinceEGY/LinkedIn-Job-Scraper).
         """)
 st.title('Heart Disease Prediction')
 st.subheader(
@@ -137,7 +136,7 @@ with cols[1]:
 
     *Keep in mind that this results is not equivalent to a medical diagnosis!
     Doctors or patients CANNOT fully rely on it, but it can be used as an aid to confirm the diagnosis, so if you have any problems, consult a human doctor.*
-    
+
     To predict your heart disease status, simply follow the steps bellow:
 
     1. Enter the parameters that best describe you on the left side bar
@@ -167,20 +166,21 @@ input_df = user_input_features()
 
 
 if submit:
-    pred = get_result(input_df)
-# st.markdown("""
-# <style>
-# strong {
-#     font-size:1.5em !important;
-#     color:%s;
-# }
-# em{
-#     font-size:1.5em !important;
-#     font-style:normal;
-# }
-# </style>
-# """ % (gradient_color[19-int(pred//5.1)]), unsafe_allow_html=True)
-# st.markdown(
-#     "_The probability that you will have heart disease is_ **{0}%**".format(round(pred * 100, 2)))
-# st.dataframe(df)
-    st.text(pred)
+    pred = round(get_result(input_df)[0][1]*100, 2)
+    st.markdown("""
+    <style>
+    strong {
+        font-size:1.6em !important;
+        color:%s;
+        text-indent: 50px;
+    }
+    em{
+        font-size:1.5em !important;
+        font-style:normal;
+        font-weight: bold;
+        word-spacing: 2px;
+    }
+    </style>
+    """ % (gradient_color[19-int(pred//5.1)]), unsafe_allow_html=True)
+    st.markdown(
+        "_The probability that you will have heart disease is_&nbsp;&nbsp; **{0}%**".format(pred))
