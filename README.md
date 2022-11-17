@@ -6,7 +6,7 @@ Heart disease is the most common cause of death in the world, and approximately 
 
 ## General Info  
 - This project was created as a Mid-Project of Samsung Innovation Campus (SIC) training.
--The application construct is located in the app.py file. This file uses dataset from `Dataset folder` and the pretrained model from `Preprocessing & Modelling` folder
+- The application construct is located in the app.py file. This file uses dataset from `Dataset folder` and the pretrained model from `Preprocessing & Modelling` folder
 - **XGBoost** has got the best accuracy with **99%** accuracy on predicting people with no HeartDisease and **91%** accuracy on predicting people with Heart Disease  
   
 
